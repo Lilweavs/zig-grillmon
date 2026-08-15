@@ -151,7 +151,7 @@ pub const MAC = struct {
         return try errors.espCheckError(sys.esp_wifi_set_mac(ifx, mac));
     }
     pub fn get(ifx: wifi_interface_t, mac: [*:0]u8) !void {
-        return try errors.espCheckError(sys.esp_wifi_get_mac(ifx, mac));
+        return try errors.espCheckError(sys.esp_wifi_get_mac(@intFromEnum(ifx), mac));
     }
 };
 pub const Promiscuous = struct {
@@ -386,14 +386,13 @@ pub const Internal = struct {
         return try errors.espCheckError(sys.esp_wifi_internal_reg_netstack_buf_cb(ref, free));
     }
     pub fn freeRXBuffer(buffer: ?*anyopaque) !void {
-        if (buffer) |b|
-            return try errors.espCheckError(sys.esp_wifi_internal_free_rx_buffer(b));
+        if (buffer) |b| sys.esp_wifi_internal_free_rx_buffer(b);
     }
     pub fn txBuffer(ifx: wifi_interface_t, buffer: ?*anyopaque, len: u16) !void {
-        return try errors.espCheckError(sys.esp_wifi_internal_tx(ifx, buffer, len));
+        return try errors.espCheckError(sys.esp_wifi_internal_tx(@intFromEnum(ifx), buffer, len));
     }
     pub fn registryTXCallBack(ifx: wifi_interface_t, @"fn": sys.wifi_rxcb_t) !void {
-        return try errors.espCheckError(sys.esp_wifi_internal_reg_rxcb(ifx, @"fn"));
+        return try errors.espCheckError(sys.esp_wifi_internal_reg_rxcb(@intFromEnum(ifx), @"fn"));
     }
 };
 

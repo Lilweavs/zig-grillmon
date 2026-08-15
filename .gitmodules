@@ -1,0 +1,3 @@
+[submodule "uzip"]
+	path = uzip
+	url = git@github.com:Lilweavs/uzip.git

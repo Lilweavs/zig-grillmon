@@ -466,6 +466,14 @@ else()
     set(ZIG_BUILD_TYPE "ReleaseSafe")
 endif()
 
+set(ZIG_CRED_ARGS "")
+if(WIFI_SSID)
+    list(APPEND ZIG_CRED_ARGS "-Dssid=${WIFI_SSID}")
+endif()
+if(WIFI_PASSWORD)
+    list(APPEND ZIG_CRED_ARGS "-Dpassword=${WIFI_PASSWORD}")
+endif()
+
 add_custom_target(zig_build
     ${ZIG_BIN} build
     --build-file ${CMAKE_SOURCE_DIR}/build.zig
@@ -473,6 +481,7 @@ add_custom_target(zig_build
     -Dtarget=${ZIG_TARGET}
     -Dcpu=${TARGET_CPU_MODEL}
     ${ZIG_EXAMPLE_ARG}
+    ${ZIG_CRED_ARGS}
     -freference-trace
     --cache-dir ${CMAKE_BINARY_DIR}/../.zig-cache
     --prefix ${CMAKE_BINARY_DIR}

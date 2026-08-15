@@ -5,7 +5,7 @@ pub const BUS = struct {
     pub fn add(bus_config: ?*const sys.i2c_master_bus_config_t, ret_bus_handle: [*c]sys.i2c_master_bus_handle_t) !void {
         return try errors.espCheckError(sys.i2c_new_master_bus(bus_config, ret_bus_handle));
     }
-    pub fn addDevice(bus_handle: sys.i2c_master_bus_handle_t, dev_config: [*c]const sys.i2c_device_config_t, ret_handle: [*c]sys.i2c_master_dev_handle_t) !void {
+    pub fn addDevice(bus_handle: sys.i2c_master_bus_handle_t, dev_config: ?*const sys.i2c_device_config_t, ret_handle: [*c]sys.i2c_master_dev_handle_t) !void {
         return try errors.espCheckError(sys.i2c_master_bus_add_device(bus_handle, dev_config, ret_handle));
     }
     pub fn del(bus_handle: sys.i2c_master_bus_handle_t) !void {

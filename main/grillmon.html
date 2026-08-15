@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f1115">
+<meta name="color-scheme" content="dark">
+<title>Grill Monitor</title>
+<style>
+:root {
+    --bg:#0f1115; --surface:#181b21; --surface-hover:#20242c;
+    --border:#2b3038; --text:#f3f4f6; --muted:#858c98;
+    --accent:#f97316; --accent-hover:#fb923c; --green:#22c55e;
+    --red:#ef4444; --blue:#60a5fa; --purple:#a78bfa; --radius:16px;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit}
+.container{width:min(1080px,calc(100% - 32px));margin:0 auto;padding:24px 0 48px}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.brand{display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;display:grid;place-items:center;border-radius:12px;background:rgba(249,115,22,.13);color:var(--accent);font-size:21px}
+h1{margin:0;font-size:21px;font-weight:650;letter-spacing:-.3px}.subtitle{margin-top:2px;color:var(--muted);font-size:12px}
+.connection{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12px}.connection-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px rgba(34,197,94,.55)}.connection-dot.offline{background:var(--red);box-shadow:none}
+.cook-card{display:flex;align-items:center;justify-content:space-between;min-height:82px;margin-bottom:16px;padding:16px 18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
+.cook-state{display:flex;align-items:center;gap:13px}.cook-indicator{width:10px;height:10px;border-radius:50%;background:var(--muted)}.cook-indicator.active{background:var(--accent);box-shadow:0 0 0 5px rgba(249,115,22,.1),0 0 14px rgba(249,115,22,.5)}
+.cook-title{font-size:15px;font-weight:600}.cook-time{margin-top:2px;color:var(--muted);font-size:12px}
+.start-button{min-width:120px;height:42px;padding:0 18px;border:0;border-radius:10px;background:var(--accent);color:white;font-size:13px;font-weight:650;cursor:pointer}.start-button:hover{background:var(--accent-hover)}.start-button:active{transform:scale(.97)}.start-button:disabled{opacity:.45;cursor:default}
+.section-title{margin:0 0 10px;color:var(--muted);font-size:11px;font-weight:650;letter-spacing:.08em;text-transform:uppercase}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
+.probes{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
+.probe{min-height:205px;padding:18px 20px;display:flex;flex-direction:column}.probe-top{display:flex;align-items:center;justify-content:space-between}
+.probe-number{color:var(--muted);font-size:11px;font-weight:650;letter-spacing:.08em}.probe-status{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 7px rgba(34,197,94,.5)}.probe-status.offline{background:var(--muted);box-shadow:none}
+.probe-name{margin-top:5px;color:var(--muted);font-size:12px;font-weight:600;letter-spacing:.08em}
+.temperature{flex:1;display:flex;align-items:center;justify-content:center;font-size:56px;line-height:1;font-weight:700;letter-spacing:-2.5px}.temperature small{margin-left:5px;color:var(--muted);font-size:19px;font-weight:500;letter-spacing:0}
+.probe-target{display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--border);color:var(--muted);font-size:11px}.probe-target strong{color:var(--text);font-weight:500}
+.chart-card{padding:18px 20px;margin-bottom:12px}.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.chart-title{font-size:14px;font-weight:600}
+.chart-range{display:flex;gap:3px}.range-button{padding:5px 8px;border:0;border-radius:6px;background:transparent;color:var(--muted);font-size:11px;cursor:pointer}.range-button:hover,.range-button.active{background:var(--surface-hover);color:var(--text)}
+.chart{width:100%;height:290px;display:block}
+.lower-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.control-card,.status-card{padding:18px 20px}
+.setpoint{display:flex;align-items:center;justify-content:space-between}.setpoint-label{color:var(--muted);font-size:12px}.setpoint-value{margin-top:3px;font-size:32px;font-weight:650;letter-spacing:-1px}.setpoint-value span{color:var(--muted);font-size:15px;font-weight:500}
+.controls{display:flex;gap:7px}.control-button{width:44px;height:44px;border:1px solid var(--border);border-radius:10px;background:var(--surface-hover);color:var(--text);font-size:22px;cursor:pointer}.control-button:hover{background:#292e37}.control-button:active{transform:scale(.96)}.control-button.primary{border-color:var(--accent);background:var(--accent)}
+.status-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 24px}.status-item{display:flex;align-items:center;justify-content:space-between;gap:10px}.status-label{color:var(--muted);font-size:12px}.status-value{font-size:12px;font-weight:550;text-align:right}
+.end-section{margin-top:12px}.end-button{width:100%;padding:13px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--muted);font-size:12px;font-weight:550;cursor:pointer}.end-button:hover{background:var(--surface);color:var(--text)}
+.end-slider{display:none;height:58px;padding:5px;background:var(--surface);border:1px solid var(--border);border-radius:30px;user-select:none;touch-action:none}.end-slider.visible{display:flex}
+.slider-track{position:relative;width:100%;height:48px;border-radius:24px;background:var(--surface-hover)}.slider-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;font-weight:600;pointer-events:none}.slider-thumb{position:absolute;top:4px;left:4px;width:40px;height:40px;display:grid;place-items:center;border-radius:50%;background:var(--red);color:white;font-size:17px;font-weight:700;cursor:grab;z-index:2}.slider-thumb:active{cursor:grabbing}
+.error{display:none;margin-bottom:12px;padding:10px 14px;border:1px solid rgba(239,68,68,.35);border-radius:10px;background:rgba(239,68,68,.08);color:#fca5a5;font-size:12px}.error.visible{display:block}
+footer{margin-top:16px;text-align:center;color:var(--muted);font-size:10px}
+@media(max-width:800px){.probes{grid-template-columns:repeat(2,1fr)}.lower-grid{grid-template-columns:1fr}}
+@media(max-width:480px){.container{width:calc(100% - 20px);padding-top:14px}header{margin-bottom:14px}.connection span{display:none}.cook-card{padding:14px}.probes{gap:8px}.probe{min-height:175px;padding:14px}.temperature{font-size:42px;letter-spacing:-2px}.temperature small{font-size:16px}.chart-card,.control-card,.status-card{padding:15px}.chart{height:230px}}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+    <div class="brand">
+        <div class="logo">🔥</div>
+        <div><h1>Grill Monitor</h1><div class="subtitle">Wireless temperature probe</div></div>
+    </div>
+    <div class="connection"><div id="connection-dot" class="connection-dot"></div><span id="connection-text">Connected</span></div>
+</header>
+
+<div id="error" class="error"></div>
+
+<div class="cook-card">
+    <div class="cook-state">
+        <div id="cook-indicator" class="cook-indicator"></div>
+        <div>
+            <div id="cook-title" class="cook-title">Ready to cook</div>
+            <div id="cook-time" class="cook-time">No active cook</div>
+        </div>
+    </div>
+    <button id="start-button" class="start-button">Start Cook</button>
+</div>
+
+<div class="section-title">Temperatures</div>
+<div class="probes">
+    <div class="card probe"><div class="probe-top"><span class="probe-number">01</span><span id="probe-status-0" class="probe-status"></span></div><div id="probe-name-0" class="probe-name">PROBE 1</div><div class="temperature"><span id="temp-0">—</span><small>°F</small></div><div class="probe-target"><span>Target</span><strong id="target-0">—</strong></div></div>
+    <div class="card probe"><div class="probe-top"><span class="probe-number">02</span><span id="probe-status-1" class="probe-status"></span></div><div id="probe-name-1" class="probe-name">PROBE 2</div><div class="temperature"><span id="temp-1">—</span><small>°F</small></div><div class="probe-target"><span>Target</span><strong id="target-1">—</strong></div></div>
+    <div class="card probe"><div class="probe-top"><span class="probe-number">03</span><span id="probe-status-2" class="probe-status"></span></div><div id="probe-name-2" class="probe-name">PROBE 3</div><div class="temperature"><span id="temp-2">—</span><small>°F</small></div><div class="probe-target"><span>Target</span><strong id="target-2">—</strong></div></div>
+    <div class="card probe"><div class="probe-top"><span class="probe-number">04</span><span id="probe-status-3" class="probe-status"></span></div><div id="probe-name-3" class="probe-name">PROBE 4</div><div class="temperature"><span id="temp-3">—</span><small>°F</small></div><div class="probe-target"><span>Target</span><strong id="target-3">—</strong></div></div>
+</div>
+
+<div class="card chart-card">
+    <div class="chart-header">
+        <div class="chart-title">Temperature history</div>
+        <div class="chart-range">
+            <button class="range-button active" data-range="1">1H</button>
+            <button class="range-button" data-range="6">6H</button>
+            <button class="range-button" data-range="12">12H</button>
+            <button class="range-button" data-range="0">ALL</button>
+        </div>
+    </div>
+    <canvas id="chart" class="chart"></canvas>
+</div>
+
+<div class="lower-grid">
+    <div class="card control-card">
+        <div class="section-title">Grill control</div>
+        <div class="setpoint">
+            <div><div class="setpoint-label">Target temperature</div><div class="setpoint-value"><span id="setpoint">—</span> <span>°F</span></div></div>
+            <div class="controls">
+                <button id="minus" class="control-button" aria-label="Decrease temperature">−</button>
+                <button id="plus" class="control-button primary" aria-label="Increase temperature">+</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card status-card">
+        <div class="section-title">Device status</div>
+        <div class="status-grid">
+            <div class="status-item"><span class="status-label">Battery</span><span id="battery" class="status-value">—</span></div>
+            <div class="status-item"><span class="status-label">Wi-Fi</span><span id="wifi" class="status-value">—</span></div>
+            <div class="status-item"><span class="status-label">Voltage</span><span id="voltage" class="status-value">—</span></div>
+            <div class="status-item"><span class="status-label">Uptime</span><span id="uptime" class="status-value">—</span></div>
+        </div>
+    </div>
+</div>
+
+<div id="end-section" class="end-section" style="display:none">
+    <button id="end-button" class="end-button">End Cook…</button>
+    <div id="end-slider" class="end-slider">
+        <div class="slider-track">
+            <div class="slider-text">Slide to end cook</div>
+            <div id="slider-thumb" class="slider-thumb">→</div>
+        </div>
+    </div>
+</div>
+
+<footer>Grill Monitor · Last update <span id="last-update">never</span></footer>
+</div>
+
+<script>
+"use strict";
+
+/*
+ * Binary protocol, little-endian.
+ *
+ * GET /api/status
+ *
+ * Offset  Size  Type      Field
+ * 0       1     u8        protocol version
+ * 1       1     u8        flags
+ * 2       4     u32       cook start time, Unix seconds
+ * 6       8     i16[4]    temperatures, °F × 10
+ * 14      2     i16       grill setpoint, °F × 10
+ * 16      1     u8        battery percentage
+ * 17      2     i16       Wi-Fi RSSI, dBm
+ * 19      2     u16       battery voltage, mV
+ * 21      4     u32       uptime, seconds
+ *
+ * Total: 25 bytes
+ *
+ * Flags:
+ * bit 0 = cooking
+ * bit 1 = probe 1 connected
+ * bit 2 = probe 2 connected
+ * bit 3 = probe 3 connected
+ * bit 4 = probe 4 connected
+ *
+ * GET /api/history
+ *
+ * Binary history packet:
+ *
+ * Offset  Size  Type      Field
+ * 0       1     u8        protocol version
+ * 1       4     u32       sample period, seconds
+ * 5       4     u32       number of samples
+ * 9       ...   i16[4]    samples, °F × 10
+ *
+ * The timestamp of sample N is:
+ * cook_start_time + N * sample_period
+ *
+ * POST /api/cook/start
+ * POST /api/cook/end
+ *
+ * POST /api/control
+ *
+ * Request body:
+ *   u16 setpoint, °F × 10
+ */
+
+const STATUS_PACKET_SIZE = 33;
+const HISTORY_HEADER_SIZE = 9;
+const HISTORY_SAMPLE_SIZE = 8;
+const PROTOCOL_VERSION = 1;
+
+let cooking = false;
+let cookStartTime = 0;
+let setpoint = 0;
+let history = [];
+let selectedRangeHours = 1;
+let refreshInProgress = false;
+
+const probeConnected = [false, false, false, false];
+
+/* ------------------------------------------------------------------ */
+/* API                                                                */
+/* ------------------------------------------------------------------ */
+
+async function apiFetch(path, options = {}) {
+    const response = await fetch(path, {
+        cache: "no-store",
+        ...options
+    });
+
+    if (!response.ok) {
+        throw new Error(`${path}: HTTP ${response.status}`);
+    }
+
+    return response;
+}
+
+async function refreshDeviceState() {
+    if (refreshInProgress) return;
+
+    refreshInProgress = true;
+
+    try {
+        const response = await apiFetch("/api/status");
+        const buffer = await response.arrayBuffer();
+
+        if (buffer.byteLength !== STATUS_PACKET_SIZE) {
+            throw new Error(
+                `Invalid status packet size: ${buffer.byteLength}`
+            );
+        }
+
+        parseStatusPacket(buffer);
+        setConnected(true);
+        hideError();
+
+    } catch (error) {
+        setConnected(false);
+        showError("Unable to communicate with the grill probe.");
+        console.error(error);
+
+    } finally {
+        refreshInProgress = false;
+    }
+}
+
+async function parseStatusPacket(buffer) {
+    const view = new DataView(buffer);
+
+    const version = view.getUint8(0);
+
+    if (version !== PROTOCOL_VERSION) {
+        throw new Error(
+            `Unsupported status protocol version: ${version}`
+        );
+    }
+
+    const flags = view.getUint8(1);
+
+    cookStartTime =
+        view.getUint32(2, true);
+
+    const temperatures = [
+        view.getFloat32(6, true),
+        view.getFloat32(10, true),
+        view.getFloat32(14, true),
+        view.getFloat32(18, true)
+    ];
+
+    setpoint =
+        view.getInt16(22, true) / 10;
+
+    const battery =
+        view.getUint8(24);
+
+    const wifiRssi =
+        view.getInt16(25, true);
+
+    const voltage =
+        view.getUint16(27, true) / 1000;
+
+    const uptime =
+        view.getUint32(29, true);
+
+    for (let i = 0; i < 4; i++) {
+        probeConnected[i] =
+            (flags & (1 << (i + 1))) !== 0;
+    }
+
+    cooking =
+        (flags & 0x01) !== 0;
+
+    updateTemperatures(temperatures);
+    updateProbeStatus();
+    updateSetpoint();
+    updateCookUI();
+
+    document.getElementById("battery").textContent =
+        `${battery}%`;
+
+    document.getElementById("wifi").textContent =
+        `${wifiRssi} dBm`;
+
+    document.getElementById("voltage").textContent =
+        `${voltage.toFixed(2)} V`;
+
+    document.getElementById("uptime").textContent =
+        formatUptime(uptime);
+
+    document.getElementById("last-update").textContent =
+        new Date().toLocaleTimeString();
+
+    /*
+     * If the device reports an active cook, retrieve history.
+     * This is deliberately done from the device rather than
+     * relying on browser memory.
+     */
+    if (cooking) {
+        await refreshHistory();
+    }
+}
+
+async function refreshHistory() {
+    const response = await apiFetch("/api/history");
+    const buffer = await response.arrayBuffer();
+
+    parseHistoryPacket(buffer);
+    drawChart();
+}
+
+function parseHistoryPacket(buffer) {
+    if (buffer.byteLength < HISTORY_HEADER_SIZE) {
+        throw new Error("History packet is too small");
+    }
+
+    const view = new DataView(buffer);
+
+    const version = view.getUint8(0);
+
+    if (version !== PROTOCOL_VERSION) {
+        throw new Error(
+            `Unsupported history protocol version: ${version}`
+        );
+    }
+
+    const samplePeriod =
+        view.getUint32(1, true);
+
+    const sampleCount =
+        view.getUint32(5, true);
+
+    const expectedSize =
+        HISTORY_HEADER_SIZE +
+        sampleCount * HISTORY_SAMPLE_SIZE;
+
+    if (buffer.byteLength !== expectedSize) {
+        throw new Error(
+            `Invalid history packet size: expected ${expectedSize}, got ${buffer.byteLength}`
+        );
+    }
+
+    /*
+     * Use the status packet's cook start time.
+     *
+     * If there is no active cook, cookStartTime can still
+     * represent the completed cook currently stored by the device.
+     */
+    history = new Array(sampleCount);
+
+    let offset = HISTORY_HEADER_SIZE;
+
+    for (let i = 0; i < sampleCount; i++) {
+        history[i] = {
+            time: (cookStartTime + i * samplePeriod) * 1000,
+            temperatures: [
+                view.getInt16(offset, true) / 10,
+                view.getInt16(offset + 2, true) / 10,
+                view.getInt16(offset + 4, true) / 10,
+                view.getInt16(offset + 6, true) / 10
+            ]
+        };
+
+        offset += HISTORY_SAMPLE_SIZE;
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/* Cook controls                                                      */
+/* ------------------------------------------------------------------ */
+
+document.getElementById("start-button").addEventListener("click", async () => {
+    try {
+        const response = await apiFetch("/api/cook/start", {
+            method: "POST"
+        });
+
+        if (response.status !== 200 && response.status !== 204) {
+            throw new Error(`Start cook: HTTP ${response.status}`);
+        }
+
+        await refreshDeviceState();
+    } catch (error) {
+        showError("Unable to start the cook.");
+        console.error(error);
+    }
+});
+
+document.getElementById("end-button").addEventListener("click", () => {
+    document.getElementById("end-button").style.display = "none";
+    document.getElementById("end-slider").classList.add("visible");
+});
+
+async function endCook() {
+    try {
+        const response = await apiFetch("/api/cook/end", {
+            method: "POST"
+        });
+
+        if (response.status !== 200 && response.status !== 204) {
+            throw new Error(`End cook: HTTP ${response.status}`);
+        }
+
+        document.getElementById("end-slider").classList.remove("visible");
+        document.getElementById("end-button").style.display = "block";
+
+        await refreshDeviceState();
+
+    } catch (error) {
+        showError("Unable to end the cook.");
+        console.error(error);
+        resetSlider();
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/* Slide to end                                                       */
+/* ------------------------------------------------------------------ */
+
+const slider = document.getElementById("end-slider");
+const thumb = document.getElementById("slider-thumb");
+
+let dragging = false;
+let startX = 0;
+let startLeft = 0;
+
+thumb.addEventListener("pointerdown", event => {
+    dragging = true;
+    startX = event.clientX;
+    startLeft = thumb.offsetLeft;
+    thumb.setPointerCapture(event.pointerId);
+});
+
+thumb.addEventListener("pointermove", event => {
+    if (!dragging) return;
+
+    const track = slider.querySelector(".slider-track");
+    const maxLeft =
+        track.clientWidth - thumb.offsetWidth - 8;
+
+    let left =
+        startLeft + (event.clientX - startX);
+
+    left =
+        Math.max(4, Math.min(maxLeft, left));
+
+    thumb.style.left = `${left}px`;
+});
+
+thumb.addEventListener("pointerup", async event => {
+    dragging = false;
+
+    const track = slider.querySelector(".slider-track");
+    const maxLeft =
+        track.clientWidth - thumb.offsetWidth - 8;
+
+    const threshold = maxLeft * 0.85;
+
+    if (thumb.offsetLeft >= threshold) {
+        await endCook();
+    } else {
+        resetSlider();
+    }
+});
+
+thumb.addEventListener("pointercancel", () => {
+    dragging = false;
+    resetSlider();
+});
+
+function resetSlider() {
+    thumb.style.left = "4px";
+}
+
+/* ------------------------------------------------------------------ */
+/* Setpoint                                                           */
+/* ------------------------------------------------------------------ */
+
+document.getElementById("minus").addEventListener("click", () => {
+    if (!Number.isFinite(setpoint)) return;
+
+    const next =
+        Math.max(100, setpoint - 5);
+
+    sendSetpoint(next);
+});
+
+document.getElementById("plus").addEventListener("click", () => {
+    if (!Number.isFinite(setpoint)) return;
+
+    const next =
+        Math.min(500, setpoint + 5);
+
+    sendSetpoint(next);
+});
+
+async function sendSetpoint(value) {
+    const buffer = new ArrayBuffer(2);
+    const view = new DataView(buffer);
+
+    view.setInt16(0, Math.round(value * 10), true);
+
+    try {
+        await apiFetch("/api/control", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/octet-stream"
+            },
+            body: buffer
+        });
+
+        await refreshDeviceState();
+
+    } catch (error) {
+        showError("Unable to change the target temperature.");
+        console.error(error);
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/* UI                                                                 */
+/* ------------------------------------------------------------------ */
+
+function updateTemperatures(values) {
+    for (let i = 0; i < 4; i++) {
+        const element =
+            document.getElementById(`temp-${i}`);
+
+        if (!probeConnected[i]) {
+            element.textContent = "—";
+        } else {
+            element.textContent =
+                Number.isFinite(values[i])
+                    ? Math.round(values[i] * 1000) / 1000
+                    : "—";
+        }
+    }
+}
+
+function updateProbeStatus() {
+    for (let i = 0; i < 4; i++) {
+        const status =
+            document.getElementById(`probe-status-${i}`);
+
+        status.classList.toggle(
+            "offline",
+            !probeConnected[i]
+        );
+    }
+}
+
+function updateSetpoint() {
+    document.getElementById("setpoint").textContent =
+        Number.isFinite(setpoint)
+            ? Math.round(setpoint)
+            : "—";
+}
+
+function updateCookUI() {
+    const indicator =
+        document.getElementById("cook-indicator");
+
+    const title =
+        document.getElementById("cook-title");
+
+    const time =
+        document.getElementById("cook-time");
+
+    const start =
+        document.getElementById("start-button");
+
+    const end =
+        document.getElementById("end-section");
+
+    if (cooking) {
+        indicator.classList.add("active");
+        title.textContent = "Cooking";
+        start.disabled = true;
+        start.textContent = "Cooking…";
+        end.style.display = "block";
+        updateCookTime();
+    } else {
+        indicator.classList.remove("active");
+        title.textContent = "Ready to cook";
+        time.textContent =
+            cookStartTime
+                ? "Cook complete"
+                : "No active cook";
+        start.disabled = false;
+        start.textContent = "Start Cook";
+        end.style.display = "none";
+    }
+}
+
+function updateCookTime() {
+    if (!cooking) return;
+
+    const elapsed =
+        Math.max(
+            0,
+            Math.floor(
+                Date.now() -
+                cookStartTime * 1000
+            ) / 1000
+        );
+
+    document.getElementById("cook-time").textContent =
+        formatDuration(elapsed);
+}
+
+function formatDuration(seconds) {
+    seconds = Math.floor(seconds);
+
+    const hours =
+        Math.floor(seconds / 3600);
+
+    const minutes =
+        Math.floor((seconds % 3600) / 60);
+
+    const secs =
+        seconds % 60;
+
+    return (
+        `${String(hours).padStart(2, "0")}:` +
+        `${String(minutes).padStart(2, "0")}:` +
+        `${String(secs).padStart(2, "0")}`
+    );
+}
+
+function formatUptime(seconds) {
+    return formatDuration(seconds);
+}
+
+function setConnected(connected) {
+    const dot =
+        document.getElementById("connection-dot");
+
+    const text =
+        document.getElementById("connection-text");
+
+    dot.classList.toggle(
+        "offline",
+        !connected
+    );
+
+    text.textContent =
+        connected
+            ? "Connected"
+            : "Disconnected";
+}
+
+function showError(message) {
+    const error =
+        document.getElementById("error");
+
+    error.textContent = message;
+    error.classList.add("visible");
+}
+
+function hideError() {
+    document
+        .getElementById("error")
+        .classList.remove("visible");
+}
+
+/* ------------------------------------------------------------------ */
+/* Chart                                                              */
+/* ------------------------------------------------------------------ */
+
+const canvas = document.getElementById("chart");
+const ctx = canvas.getContext("2d");
+
+function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    drawChart();
+}
+
+function drawChart() {
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+
+    ctx.clearRect(0, 0, width, height);
+
+    if (history.length < 2) return;
+
+    let samples = history;
+
+    if (selectedRangeHours > 0) {
+        const cutoff =
+            Date.now() -
+            selectedRangeHours * 3600 * 1000;
+
+        const first =
+            history.findIndex(
+                sample => sample.time >= cutoff
+            );
+
+        if (first >= 0) {
+            samples = history.slice(first);
+        }
+    }
+
+    if (samples.length < 2) return;
+
+    const padding = {
+        left: 38,
+        right: 12,
+        top: 12,
+        bottom: 25
+    };
+
+    const chartWidth =
+        width - padding.left - padding.right;
+
+    const chartHeight =
+        height - padding.top - padding.bottom;
+
+    let minTemp = Infinity;
+    let maxTemp = -Infinity;
+
+    for (const sample of samples) {
+        for (const temp of sample.temperatures) {
+            if (Number.isFinite(temp)) {
+                minTemp = Math.min(minTemp, temp);
+                maxTemp = Math.max(maxTemp, temp);
+            }
+        }
+    }
+
+    if (!Number.isFinite(minTemp)) return;
+
+    minTemp = Math.floor((minTemp - 10) / 25) * 25;
+    maxTemp = Math.ceil((maxTemp + 10) / 25) * 25;
+
+    if (maxTemp - minTemp < 100) {
+        const center = (maxTemp + minTemp) / 2;
+        minTemp = Math.floor((center - 50) / 25) * 25;
+        maxTemp = minTemp + 100;
+    }
+
+    function x(i) {
+        return padding.left +
+            i / (samples.length - 1) * chartWidth;
+    }
+
+    function y(temp) {
+        return padding.top +
+            (maxTemp - temp) /
+            (maxTemp - minTemp) *
+            chartHeight;
+    }
+
+    ctx.strokeStyle = "#272c35";
+    ctx.fillStyle = "#707783";
+    ctx.font = "11px sans-serif";
+    ctx.lineWidth = 1;
+
+    const gridStep = 25;
+
+    for (
+        let temperature = Math.ceil(minTemp / gridStep) * gridStep;
+        temperature <= maxTemp;
+        temperature += gridStep
+    ) {
+        const yy = y(temperature);
+
+        ctx.beginPath();
+        ctx.moveTo(padding.left, yy);
+        ctx.lineTo(width - padding.right, yy);
+        ctx.stroke();
+
+        ctx.fillText(
+            temperature,
+            5,
+            yy + 4
+        );
+    }
+
+    if (Number.isFinite(setpoint)) {
+        const setpointY = y(setpoint);
+
+        if (setpointY >= padding.top &&
+            setpointY <= padding.top + chartHeight) {
+
+            ctx.strokeStyle = "#555b66";
+            ctx.setLineDash([5, 5]);
+
+            ctx.beginPath();
+            ctx.moveTo(padding.left, setpointY);
+            ctx.lineTo(width - padding.right, setpointY);
+            ctx.stroke();
+
+            ctx.setLineDash([]);
+        }
+    }
+
+    const lineColors = [
+        "#f97316",
+        "#60a5fa",
+        "#a78bfa",
+        "#22c55e"
+    ];
+
+    for (let probe = 0; probe < 4; probe++) {
+        if (!probeConnected[probe]) continue;
+
+        ctx.strokeStyle = lineColors[probe];
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+
+        let started = false;
+
+        for (let i = 0; i < samples.length; i++) {
+            const temp =
+                samples[i].temperatures[probe];
+
+            if (!Number.isFinite(temp)) {
+                started = false;
+                continue;
+            }
+
+            const px = x(i);
+            const py = y(temp);
+
+            if (!started) {
+                ctx.moveTo(px, py);
+                started = true;
+            } else {
+                ctx.lineTo(px, py);
+            }
+        }
+
+        ctx.stroke();
+    }
+}
+
+document.querySelectorAll(".range-button").forEach(button => {
+    button.addEventListener("click", () => {
+        document
+            .querySelectorAll(".range-button")
+            .forEach(item =>
+                item.classList.remove("active")
+            );
+
+        button.classList.add("active");
+
+        selectedRangeHours =
+            Number(button.dataset.range);
+
+        drawChart();
+    });
+});
+
+/* ------------------------------------------------------------------ */
+/* Startup                                                            */
+/* ------------------------------------------------------------------ */
+
+window.addEventListener("resize", resizeCanvas);
+
+async function initialize() {
+    resizeCanvas();
+    await refreshDeviceState();
+}
+
+initialize();
+
+setInterval(
+    refreshDeviceState,
+    1000
+);
+
+setInterval(
+    updateCookTime,
+    1000
+);
+
+setInterval(
+    () => drawChart(),
+    30000
+);
+</script>
+</body>
+</html>

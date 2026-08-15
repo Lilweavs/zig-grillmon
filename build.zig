@@ -8,6 +8,8 @@ pub fn build(b: *std.Build) !void {
     const optimize = b.standardOptimizeOption(.{});
 
     const example = b.option([]const u8, "example", "Relative path (from project root) to the Zig source file") orelse "main/app.zig";
+    const ssid = b.option([]const u8, "ssid", "WiFi SSID compiled into main/app.zig") orelse "";
+    const password = b.option([]const u8, "password", "WiFi password compiled into main/app.zig") orelse "";
 
     const obj = b.addObject(.{
         .name = "app_zig",
@@ -18,7 +20,20 @@ pub fn build(b: *std.Build) !void {
             .link_libc = true,
         }),
     });
+
+    const uzip_mod = b.dependency("uzip", .{
+        .target = target,
+        .optimize = optimize,
+    }).module("uzip");
+
+    obj.root_module.addImport("uzip", uzip_mod);
+
     obj.root_module.addImport("esp_idf", idf_wrapped_modules(b));
+
+    const wifi_opts = b.addOptions();
+    wifi_opts.addOption([]const u8, "wifi_ssid", ssid);
+    wifi_opts.addOption([]const u8, "wifi_password", password);
+    obj.root_module.addOptions("app_config", wifi_opts);
 
     const obj_install = b.addInstallArtifact(obj, .{
         .dest_dir = .{

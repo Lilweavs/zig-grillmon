@@ -11,13 +11,16 @@ CONFIG_COMPILER_OPTIMIZATION_DEFAULT=y
 CONFIG_COMPILER_OPTIMIZATION_PERF=n
 CONFIG_COMPILER_OPTIMIZATION_SIZE=n
 CONFIG_ESP_WIFI_ENABLED=y
+
+# Debug-mode Zig frames are large; give the main task (app_main) headroom.
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
 # CONFIG_SPI_FLASH_DANGEROUS_WRITE_FAILS=y
 # CONFIG_COMPILER_STACK_CHECK_MODE_STRONG=y
 # CONFIG_COMPILER_STACK_CHECK=y
 
 
 # This allows to use 1 ms granuality for thread sleeps (10 ms by default).
-# CONFIG_FREERTOS_HZ=1000
+CONFIG_FREERTOS_HZ=1000
 
 # not working using `HeapCapsAllocator`,
 # but std `raw_c_allocator` or `VPortAllocator` works
