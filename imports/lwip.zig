@@ -25,7 +25,7 @@ pub const LwipError = error{
 };
 
 pub fn errFromC(e: sys.err_t) LwipError!void {
-    return switch (@as(sys.err_enum_t, @fromBackingInt(@intCast(e)))) {
+    return switch (@as(sys.err_enum_t, @enumFromInt(e))) {
         .ERR_OK => {},
         .ERR_MEM => LwipError.OutOfMemory,
         .ERR_BUF => LwipError.BufferError,

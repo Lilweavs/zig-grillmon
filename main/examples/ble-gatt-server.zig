@@ -9,6 +9,7 @@
 ///   CONFIG_BT_BLE_ENABLED=y
 ///   CONFIG_BT_GATTS_ENABLE=y
 ///
+/// Tested on: ESP32 with IDF v6.0 + Zig 0.16.0-xtensa-dev
 const std = @import("std");
 const builtin = @import("builtin");
 const idf = @import("esp_idf");
@@ -327,7 +328,7 @@ export fn app_main() callconv(.c) void {
 pub const panic = idf.esp_panic.panic;
 pub const std_options: std.Options = .{
     .log_level = switch (builtin.mode) {
-        .debug => .debug,
+        .Debug => .debug,
         else => .info,
     },
     .logFn = idf.log.espLogFn,
